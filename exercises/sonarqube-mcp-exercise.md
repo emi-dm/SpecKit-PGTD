@@ -1,230 +1,301 @@
-# 🔍 Ejercicio: Incorporar SonarQube para Mantenibilidad
+# 🔍 Ejercicio: Incorporar SonarQube MCP para Mantenibilidad
 
 ## Objetivo
 
-Usar **docker-sonarqube-setup** para integrar SonarQube en el flujo de desarrollo de Photo Album App y garantizar que la aplicación sea mantenible, con código de calidad y libre de deuda técnica.
+Integrar **SonarQube como Model Context Protocol (MCP)** usando **docker-sonarqube-setup** en el flujo de desarrollo de Photo Album App para garantizar mantenibilidad automática a través del agente IA.
 
 ---
 
 ## Descripción del Ejercicio
 
-### ¿Qué es SonarQube?
+### ¿Qué es SonarQube MCP?
 
-SonarQube es una herramienta que analiza automáticamente la calidad del código identificando:
-- **Code Smells**: Código que funciona pero es difícil de mantener
-- **Bugs**: Problemas potenciales
-- **Vulnerabilidades**: Riesgos de seguridad
-- **Cobertura**: Porcentaje de código testado
-- **Duplicaciones**: Código repetido innecesariamente
+MCP (Model Context Protocol) permite que tu agente IA (Claude, Copilot, etc) consulte SonarQube directamente:
 
-### ¿Por qué es importante en Spec-Driven Development?
+```
+Agente IA (Claude/Copilot)
+        ↓
+   MCP Server
+        ↓
+   SonarQube
+        ↓
+Análisis de calidad
+```
 
-La **Constitution** de Photo Album App especifica que el código debe ser:
-- Legible y mantenible
-- Con 80% cobertura de tests mínimo
+El agente IA **recibe contexto en vivo** sobre calidad, en lugar de ejecutar comandos manualmente.
+
+### ¿Por qué es importante?
+
+La **Constitution** de Photo Album App especifica:
+- Código legible y mantenible
+- 80% cobertura de tests mínimo
 - Sin vulnerabilidades de seguridad
-- Bajo en complejidad
+- Baja complejidad
 
-**SonarQube valida automáticamente** que estos principios se cumplen.
+Con **MCP, el agente IA valida automáticamente** estos principios mientras desarrolla.
 
 ---
 
 ## Tareas del Ejercicio
 
-### 1. Clonar y Configurar docker-sonarqube-setup
+### 1. Iniciar docker-sonarqube-setup
 
 ```bash
-# Clonar el repositorio
+# Clonar repositorio
 git clone https://github.com/emi-dm/docker-sonarqube-setup.git
 cd docker-sonarqube-setup
 
-# Instalar (usando el script)
+# Iniciar servicios
 ./scripts/setup.sh start
 
-# Verificar que funciona
+# Verificar
 ./scripts/verify.sh
 ```
 
 **Resultado esperado:**
 - SonarQube corriendo en http://localhost:9000
 - PostgreSQL en background
-- Todos los checks pasando
+- Acceso: admin / admin
 
 ### 2. Generar Token de API
 
 1. Accede a http://localhost:9000
 2. Login: `admin` / `admin`
-3. Cambia la contraseña (recomendado)
-4. Ve a **My Account → Security → Tokens**
-5. Genera nuevo token y guárdalo
+3. Ve a **My Account → Security → Tokens**
+4. Crea nuevo token: `spec-kit-mcp`
+5. Copia el token (aparece solo una vez)
+6. Guárdalo en `.env` como:
+   ```
+   SONARQUBE_TOKEN=squ_xxxxx
+   SONARQUBE_URL=http://sonarqube:9000/
+   ```
 
 **Entrega:**
-- [ ] Token generado y guardado en `.env`
+- [ ] Token generado
+- [ ] Token guardado en `.env`
 
-### 3. Analizar Photo Album App
+### 3. Configurar MCP en tu Agente IA
 
-En el directorio de Photo Album App:
+**Para Claude Code:**
+
+Edita `.claude.json` en tu proyecto:
+```json
+{
+  "mcp": {
+    "sonarqube": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run", "-i", "--rm", "--init",
+        "--pull=always",
+        "-e", "SONARQUBE_TOKEN",
+        "-e", "SONARQUBE_URL",
+        "--network", "sonarqube-net",
+        "mcp/sonarqube"
+      ],
+      "env": {
+        "SONARQUBE_TOKEN": "squ_xxxxx",
+        "SONARQUBE_URL": "http://sonarqube:9000/"
+      }
+    }
+  }
+}
+```
+
+**Para otros agentes:** Consulta su documentación de MCP integration.
+
+### 4. Abrir Photo Album App con Agente IA
+
+Abre tu agente IA (Claude Code, etc) en el directorio de Photo Album App:
 
 ```bash
-# Instalar sonar-scanner
-npm install -g sonar-scanner
-
-# Crear sonar-project.properties
-cat > sonar-project.properties << EOF
-sonar.projectKey=photo-album-app
-sonar.projectName=Photo Album App
-sonar.sources=src
-sonar.tests=tests
-sonar.host.url=http://localhost:9000
-sonar.login=<TU_TOKEN_AQUÍ>
-EOF
-
-# Ejecutar análisis
-sonar-scanner
+cd ../photo-album-app
+# Abrir con tu agente IA
+code .  # para VS Code + Claude Code
 ```
 
-**Entrega:**
-- [ ] Análisis completado
-- [ ] Resultados visibles en http://localhost:9000
+### 5. Consultar SonarQube a través del MCP
 
-### 4. Identificar Problemas de Mantenibilidad
+En tu agente IA, usa comandos como:
 
-Documenta en `SONARQUBE_REPORT.md`:
+```
+@sonarqube
+
+"¿Cuáles son los principales problemas de calidad en este proyecto?"
+
+"¿Cuál es el coverage actual?"
+
+"¿Hay vulnerabilidades de seguridad?"
+
+"¿Qué funciones tienen complejidad muy alta?"
+```
+
+El MCP responderá con análisis en vivo de SonarQube.
+
+### 6. Documentar Hallazgos
+
+Crea `SONARQUBE_ANALYSIS.md`:
 
 ```markdown
-# Reporte SonarQube - Photo Album App
+# Análisis SonarQube vía MCP
 
-## Métricas Actuales
+## Consultas Realizadas
 
-- **Cobertura**: XX% (objetivo: 80%)
-- **Code Smells**: XX encontrados
-- **Complejidad promedio**: XX
-- **Vulnerabilidades**: XX
-- **Duplicaciones**: XX%
+### 1. Estado General
+[Respuesta del MCP]
 
-## Problemas Principales
+### 2. Coverage
+[Respuesta del MCP]
 
-1. [Listar code smells principales]
-2. [Listar vulnerabilidades]
-3. [Listar funciones complejas]
+### 3. Vulnerabilidades
+[Respuesta del MCP]
 
-## Plan de Mejora
+### 4. Code Smells
+[Respuesta del MCP]
 
-- [ ] Aumentar cobertura a 85%+
-- [ ] Reducir code smells a < 3
-- [ ] Refactorizar complejidad
-- [ ] Eliminar duplicaciones
+## Planes de Mejora
+
+[Basado en recomendaciones del MCP]
 ```
 
-### 5. Integrar en Spec-Driven
+### 7. Usar MCP para Mejorar Código
+
+**Solicita al agente (con MCP disponible):**
+
+```
+"Basado en el análisis de SonarQube:
+1. Aumenta coverage a 85%
+2. Refactoriza funciones con complejidad > 10
+3. Elimina code smells principales
+
+Usa @sonarqube para verificar mejoras"
+```
+
+El agente IA:
+- Consulta SonarQube vía MCP
+- Ve exactamente qué está mal
+- Genera fixes específicos
+- Verifica que se resuelve con MCP
+
+### 8. Integrar en Spec-Driven
 
 **Actualiza constitution.md:**
 ```markdown
-## Validación Automática (SonarQube)
+## Validación Automática (SonarQube MCP)
 
-- Coverage: ≥ 80%
-- Code Smells: ≤ 3
-- Vulnerabilidades: 0
-- Complejidad: < 10 por función
+Toda la validación de calidad ocurre automáticamente a través del MCP:
+- Coverage: ≥ 80% (validado por MCP)
+- Code Smells: ≤ 3 (detectados por MCP)
+- Vulnerabilidades: 0 (reportadas por MCP)
 ```
 
 **Actualiza plan.md:**
 ```markdown
-## Garantía de Calidad
+## Garantía de Calidad con MCP
 
-SonarQube valida automáticamente que:
-- Código es legible y mantenible
-- Tests cubren casos críticos
-- No hay vulnerabilidades
+El agente IA tiene acceso a SonarQube vía MCP:
+- Consulta calidad en vivo
+- Recibe recomendaciones específicas
+- Valida fixes automáticamente
 ```
 
 **Actualiza tasks.md:**
 ```markdown
-### Task Final: Validación SonarQube
+### Task: Validación SonarQube MCP
 
-- Ejecutar: sonar-scanner
-- Verificar: Todos los gates pasan
-- Criterio: Coverage ≥ 80%
+- Usar: @sonarqube en agente IA
+- Verificar: Coverage ≥ 85%
+- Criterio: Code Smells < 3
+- Método: MCP queries + fixes
 ```
-
-### 6. Mejorar la Mantenibilidad
-
-Basado en el análisis:
-
-1. **Aumenta Coverage:**
-   - Identifica archivos con < 80% cobertura
-   - Escribe tests para los gaps
-   - Re-ejecuta análisis
-
-2. **Reduce Code Smells:**
-   - Refactoriza funciones largas
-   - Elimina duplicaciones
-   - Mejora nombres de variables
-
-3. **Elimina Vulnerabilidades:**
-   - Revisa security hotspots
-   - Implementa fixes
-   - Verifica que se resuelven
-
-### 7. Automatizar Quality Gate
-
-Configura regla en SonarQube:
-
-1. En SonarQube → Administration → Quality Gates
-2. Crea gate: "Photo Album App"
-3. Añade condiciones:
-   - Coverage < 80% = FAIL
-   - New code smells = FAIL
-   - Critical vulnerability = FAIL
 
 ---
 
 ## Criterios de Éxito
 
-- ✅ SonarQube corriendo con docker-sonarqube-setup
-- ✅ Análisis inicial ejecutado
-- ✅ Reporte documentado en `SONARQUBE_REPORT.md`
-- ✅ Constitution, Plan y Tasks actualizados
-- ✅ Coverage mejorado a ≥ 85%
-- ✅ Code Smells reducidos a < 3
-- ✅ Quality Gate creado y pasando
-- ✅ Re-análisis confirmando mejoras
+- ✅ docker-sonarqube-setup corriendo
+- ✅ Token de SonarQube generado
+- ✅ MCP configurado en agente IA
+- ✅ Consultas MCP funcionando (@sonarqube)
+- ✅ Hallazgos documentados en markdown
+- ✅ Coverage mejorado a ≥ 85% (verificado con MCP)
+- ✅ Code Smells reducidos (verificado con MCP)
+- ✅ Spec-Driven documents actualizados
 
 ---
 
 ## Entrega
 
-Crea carpeta `sonarqube/` con:
+Crea carpeta `sonarqube-mcp/` con:
 
 ```
-sonarqube/
-├── sonar-project.properties      # Configuración
-├── SONARQUBE_REPORT.md           # Análisis inicial
-├── IMPROVEMENTS.md               # Cambios realizados
-└── screenshots/                  # Dashboard antes/después
+sonarqube-mcp/
+├── .env                         # Token configurado
+├── SONARQUBE_ANALYSIS.md        # Hallazgos del MCP
+├── IMPROVEMENTS.md              # Mejoras realizadas
+└── mcp-queries.log              # Transcript de @sonarqube
 ```
 
 Además, actualiza:
-- `constitution.md` - Con métricas SonarQube
-- `plan.md` - Con estrategia de validación
-- `tasks.md` - Con task de quality gate
+- `constitution.md` - Con validación MCP
+- `plan.md` - Con estrategia MCP
+- `tasks.md` - Con criterios MCP
+
+---
+
+## Flujo Completo
+
+```
+1. docker-sonarqube-setup start
+        ↓
+2. Generar token SonarQube
+        ↓
+3. Configurar .claude.json (MCP)
+        ↓
+4. Abrir proyecto con agente IA
+        ↓
+5. @sonarqube "¿Problemas de calidad?"
+        ↓
+6. MCP responde con análisis
+        ↓
+7. Agente IA mejora código basado en MCP
+        ↓
+8. @sonarqube "¿Se resolvió?"
+        ↓
+9. Documentar mejoras
+        ↓
+10. Actualizar Spec-Driven documents
+```
+
+---
+
+## Ventajas vs sonar-scanner
+
+| Aspecto | sonar-scanner | MCP |
+|---------|---------------|-----|
+| **Automatización** | Manual | Automática |
+| **Integración IA** | No | Sí |
+| **Feedback tiempo-real** | No | Sí |
+| **Desarrollo iterativo** | Lento | Rápido |
+| **Contexto en IA** | No | Completo |
 
 ---
 
 ## Beneficios
 
-Al integrar SonarQube, garantizas que:
+Al usar SonarQube MCP:
 
-✅ La aplicación es **mantenible** según principios definidos  
-✅ Los **cambios futuros** no degradan calidad  
-✅ El **agente IA** tiene criterios objetivos de éxito  
-✅ La **deuda técnica** se gestiona proactivamente  
-✅ La **seguridad** se valida automáticamente  
+✅ El agente IA **ve** problemas de calidad  
+✅ Genera **fixes específicos** basado en análisis  
+✅ **Valida** automáticamente que se resuelven  
+✅ Mantiene código **mantenible** durante desarrollo  
+✅ No requiere comandos manuales  
+✅ **Feedback en vivo** mientras desarrollas  
 
 ---
 
 ## Referencias
 
 - [docker-sonarqube-setup](https://github.com/emi-dm/docker-sonarqube-setup)
-- [SonarQube Documentation](https://docs.sonarsource.com/sonarqube/)
-- [Quick Start Guide](https://github.com/emi-dm/docker-sonarqube-setup#-quick-start)
+- [MCP Integration Guide](https://github.com/emi-dm/docker-sonarqube-setup#-mcp-integration)
+- [Model Context Protocol](https://modelcontextprotocol.io/)
