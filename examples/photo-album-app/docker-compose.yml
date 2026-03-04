@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  # Development server
+  app:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
+    networks:
+      - photo-network
+
+  # Optional: Testing container
+  test:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=test
+    command: npm run test:watch
+    networks:
+      - photo-network
+    profiles:
+      - test
+
+  # Optional: Production build preview
+  preview:
+    image: node:20-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - "4173:4173"
+    environment:
+      - NODE_ENV=production
+    command: bash -c "npm run build && npm run preview"
+    networks:
+      - photo-network
+    profiles:
+      - preview
+
+networks:
+  photo-network:
+    driver: bridge
