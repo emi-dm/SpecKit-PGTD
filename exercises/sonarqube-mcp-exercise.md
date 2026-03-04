@@ -50,324 +50,368 @@ Integrar **SonarQube como Model Context Protocol (MCP)** en tu workflow de Spec-
 
 ### 1.1 Instalar SonarQube Localmente
 
-```bash
-# Opción 1: Docker (recomendado)
-docker run -d --name sonarqube \
-  -p 9000:9000 \
-  sonarqube:latest
+**Tareas:**
+1. Descarga e instala SonarQube (usa Docker o descarga directa)
+2. Inicia el servicio
+3. Verifica que esté corriendo en http://localhost:9000
 
-# Opción 2: Descarga directa
-wget https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-10.0.0.68432.zip
-unzip sonarqube-10.0.0.68432.zip
-```
+**Requisitos:**
+- Docker instalado (opción recomendada) O
+- Java 11+ instalado (para descarga directa)
 
-### 1.2 Acceder a SonarQube
+**Entrega esperada:**
+- [ ] SonarQube corriendo en :9000
+- [ ] Acceso web verificado
+- [ ] Screenshot de la interfaz
 
-```
-URL: http://localhost:9000
-Usuario: admin
-Password: admin
-(Cambiar password en primer login)
-```
+---
 
-### 1.3 Crear Token de API
+### 1.2 Acceder a SonarQube y Crear Token
 
-1. Click en Avatar (arriba a la derecha)
-2. Security → Tokens
-3. Generate Token → Nombre: `spec-kit-token`
-4. Guardar token (lo usaremos después)
+**Tareas:**
+1. Accede a la interfaz web de SonarQube
+2. Inicia sesión con credenciales por defecto
+3. Crea un nuevo token de API
+4. Nombra el token: `spec-kit-integration`
+5. Guarda el token en un lugar seguro
+
+**Requisitos:**
+- SonarQube corriendo
+- Acceso a interfaz web
+
+**Entrega esperada:**
+- [ ] Token generado
+- [ ] Token guardado en archivo `.env` o similar
+- [ ] Verificación de que token funciona
+
+---
+
+### 1.3 Instalar herramientas necesarias
+
+**Tareas:**
+1. Instala `sonar-scanner` globalmente
+2. Verifica la instalación
+3. Configura el path si es necesario
+
+**Requisitos:**
+- npm o similar gestor de paquetes
+- Terminal/CLI acceso
+
+**Entrega esperada:**
+- [ ] `sonar-scanner --version` funciona
+- [ ] Output muestra versión actual
 
 ---
 
 ## 🎯 Parte 2: Configurar MCP Server para SonarQube
 
-### 2.1 Instalar herramientas necesarias
+### 2.1 Planificar arquitectura del MCP Server
 
-```bash
-# Instalar sonar-cli para análisis
-npm install -g sonar-scanner
+**Tareas:**
+1. Diseña la arquitectura del MCP Server
+2. Define qué endpoints expondrá
+3. Especifica qué datos consultará de SonarQube
+4. Documenta el diagrama de flujo
 
-# Verificar instalación
-sonar-scanner --version
-```
+**Requisitos:**
+- Entender API de SonarQube
+- Diseño de arquitectura
+
+**Preguntas a responder:**
+- [ ] ¿Qué endpoints expondrá el MCP?
+- [ ] ¿En qué puerto correrá?
+- [ ] ¿Qué formato de respuesta dará?
+- [ ] ¿Cómo se autenticará con SonarQube?
+
+**Entrega esperada:**
+- [ ] Documento de arquitectura
+- [ ] Diagrama de flujo
+- [ ] Especificación de endpoints
+
+---
 
 ### 2.2 Crear archivo de configuración
 
-Archivo: `sonar-project.properties`
+**Tareas:**
+1. Crea archivo `sonar-project.properties` en tu proyecto
+2. Configura todos los parámetros necesarios:
+   - Project key
+   - Project name
+   - Rutas de código fuente
+   - Rutas de tests
+   - Exclusiones
+   - URL de SonarQube
+   - Token de autenticación
 
-```properties
-sonar.projectKey=photo-album-app
-sonar.projectName=Photo Album App
-sonar.projectVersion=1.0.0
-sonar.sources=src
-sonar.tests=tests
-sonar.exclusions=node_modules/**,dist/**,coverage/**
-sonar.host.url=http://localhost:9000
-sonar.login=<YOUR_TOKEN_HERE>
-```
+**Requisitos:**
+- Acceso a SonarQube
+- Token creado en 1.2
 
-### 2.3 Configurar MCP en tu Agente IA
+**Entrega esperada:**
+- [ ] Archivo `sonar-project.properties` creado
+- [ ] Todos los parámetros configurados
+- [ ] Archivo probado (sin errores de validación)
 
-Para **Claude Code** o agentes que soporten MCP:
+---
 
-Archivo: `.claude.json`
+### 2.3 Implementar MCP Server
 
-```json
-{
-  "mcp": {
-    "sonarqube": {
-      "command": "node",
-      "args": ["./mcp-servers/sonarqube-mcp.js"],
-      "env": {
-        "SONAR_URL": "http://localhost:9000",
-        "SONAR_TOKEN": "<YOUR_TOKEN>"
-      }
-    }
-  }
-}
-```
+**Tareas:**
+1. Crea un servidor MCP que:
+   - Lee la URL y token de SonarQube desde env
+   - Expone endpoints HTTP
+   - Consulta la API de SonarQube
+   - Transforma datos para el agente IA
+   - Maneja errores correctamente
 
-### 2.4 Crear MCP Server para SonarQube
+2. El servidor debe soportar estos endpoints:
+   - `/issues` - Obtiene problemas de calidad
+   - `/code-smells` - Filtra solo code smells
+   - `/security` - Filtra solo hotspots de seguridad
+   - `/coverage` - Obtiene métricas de cobertura
+   - `/report` - Genera reporte resumido
 
-Archivo: `mcp-servers/sonarqube-mcp.js`
+**Requisitos:**
+- Conocimiento de HTTP/REST
+- Familiaridad con APIs
+- Lenguaje: Node.js, Python, Go (tu elección)
 
-```javascript
-// MCP Server para integrar SonarQube
-const http = require('http');
-const url = require('url');
+**Restricciones:**
+- El servidor debe ser stateless
+- Debe manejar múltiples requests simultáneos
+- Debe loguear todas las interacciones
+- Debe tener timeout en requests a SonarQube
 
-const SONAR_URL = process.env.SONAR_URL || 'http://localhost:9000';
-const SONAR_TOKEN = process.env.SONAR_TOKEN;
+**Entrega esperada:**
+- [ ] Servidor MCP implementado
+- [ ] Todos los 5 endpoints funcionando
+- [ ] Error handling robusto
+- [ ] Logs habilitados
 
-class SonarQubeMCPServer {
-  constructor() {
-    this.projectKey = 'photo-album-app';
-  }
+---
 
-  async getProjectIssues() {
-    /**
-     * Obtiene problemas de calidad del proyecto
-     */
-    const endpoint = `${SONAR_URL}/api/issues/search?componentKeys=${this.projectKey}`;
-    return this._fetchFromSonar(endpoint);
-  }
+### 2.4 Integrar MCP en tu Agente IA
 
-  async getCodeSmells() {
-    /**
-     * Obtiene code smells específicos
-     */
-    const endpoint = `${SONAR_URL}/api/issues/search?componentKeys=${this.projectKey}&types=CODE_SMELL`;
-    return this._fetchFromSonar(endpoint);
-  }
+**Tareas:**
+1. Configura tu agente IA para usar el MCP Server
+2. Actualiza archivos de configuración del agente
+3. Verifica que el agente puede consultar el MCP
+4. Prueba con una consulta simple
 
-  async getSecurityHotspots() {
-    /**
-     * Obtiene vulnerabilidades de seguridad
-     */
-    const endpoint = `${SONAR_URL}/api/hotspots/search?projectKey=${this.projectKey}`;
-    return this._fetchFromSonar(endpoint);
-  }
+**Requisitos:**
+- Agente IA instalado (Claude Code, Copilot, etc)
+- MCP Server corriendo
 
-  async getTestCoverage() {
-    /**
-     * Obtiene métricas de cobertura de tests
-     */
-    const endpoint = `${SONAR_URL}/api/measures/component?component=${this.projectKey}&metricKeys=coverage,lines_to_cover`;
-    return this._fetchFromSonar(endpoint);
-  }
+**Procesos:**
+- Para Claude Code: Edita `.claude.json`
+- Para GitHub Copilot: Usa extensión MCP
+- Para otros: Consulta documentación específica
 
-  async _fetchFromSonar(endpoint) {
-    return new Promise((resolve, reject) => {
-      const options = {
-        headers: {
-          'Authorization': `Bearer ${SONAR_TOKEN}`,
-          'Content-Type': 'application/json'
-        }
-      };
-
-      http.get(endpoint, options, (res) => {
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => resolve(JSON.parse(data)));
-      }).on('error', reject);
-    });
-  }
-
-  generateReport() {
-    /**
-     * Genera reporte de contexto para el agente IA
-     */
-    return `
-# SonarQube Analysis Report
-
-## Quality Status
-- Code Smell Density: [XX]%
-- Security Rating: [A|B|C|D|E]
-- Maintainability: [High|Medium|Low]
-
-## Recommendations
-1. Fix critical issues first
-2. Improve test coverage
-3. Reduce cognitive complexity
-    `;
-  }
-}
-
-// Servidor MCP expone endpoints
-const server = http.createServer(async (req, res) => {
-  const sonar = new SonarQubeMCPServer();
-  const parsedUrl = url.parse(req.url, true);
-
-  res.setHeader('Content-Type', 'application/json');
-
-  try {
-    switch (parsedUrl.pathname) {
-      case '/issues':
-        res.end(JSON.stringify(await sonar.getProjectIssues()));
-        break;
-      case '/code-smells':
-        res.end(JSON.stringify(await sonar.getCodeSmells()));
-        break;
-      case '/security':
-        res.end(JSON.stringify(await sonar.getSecurityHotspots()));
-        break;
-      case '/coverage':
-        res.end(JSON.stringify(await sonar.getTestCoverage()));
-        break;
-      case '/report':
-        res.end(sonar.generateReport());
-        break;
-      default:
-        res.statusCode = 404;
-        res.end(JSON.stringify({ error: 'Endpoint not found' }));
-    }
-  } catch (error) {
-    res.statusCode = 500;
-    res.end(JSON.stringify({ error: error.message }));
-  }
-});
-
-server.listen(3000, () => {
-  console.log('SonarQube MCP Server running on :3000');
-});
-```
+**Entrega esperada:**
+- [ ] Archivos de configuración actualizados
+- [ ] Agente reconoce el MCP Server
+- [ ] Primera consulta exitosa
 
 ---
 
 ## 🚀 Parte 3: Integración en Workflow Spec-Driven
 
-### 3.1 Enriquecer Constitution con Calidad
+### 3.1 Enriquecer Constitution con métricas de calidad
 
-En `constitution.md`, añade sección de calidad medible:
+**Tareas:**
+1. Abre `constitution.md` de tu proyecto Photo Album App
+2. Añade nueva sección: "Métricas de Calidad (Validadas por SonarQube)"
+3. Define métricas específicas y medibles:
+   - Cobertura de tests
+   - Densidad de code smells
+   - Complejidad cognitiva
+   - Rating de seguridad
+   - Líneas duplicadas
 
-```markdown
-## Métricas de Calidad (Validadas por SonarQube)
+4. Cada métrica debe tener:
+   - Valor objetivo
+   - Cómo se mide
+   - Por qué es importante
+   - Cómo se valida
 
-- **Code Smell Density:** < 3%
-- **Test Coverage:** ≥ 80%
-- **Duplicated Lines:** < 3%
-- **Cognitive Complexity:** < 10 por función
-- **Security Rating:** A (sin vulnerabilidades)
+**Requisitos:**
+- Entender constitution.md actual
+- Conocer métricas de SonarQube
+
+**Entrega esperada:**
+- [ ] Nueva sección en constitution.md
+- [ ] Mínimo 5 métricas definidas
+- [ ] Cada métrica es medible
+- [ ] Vinculado a requisitos de project
+
+---
+
+### 3.2 Usar SonarQube en fase de Specification
+
+**Tareas:**
+1. Revisa tu `spec.md` actual
+2. Identifica requisitos no-funcionales que implican calidad
+3. Reescribe esos requisitos para que sean:
+   - Validables por SonarQube
+   - Mensurables
+   - Verificables automáticamente
+
+4. Documenta cómo cada requisito será validado
+
+**Requisitos:**
+- Entender spec.md actual
+- Conocer capacidades de SonarQube
+
+**Ejemplo esperado:**
+```
+Requisito: "El código debe ser mantenible"
+↓ Específico y medible:
+"Cobertura ≥ 80%, Complejidad < 10, Code smells < 3"
+↓ Validable:
+"SonarQube reportará estos números"
 ```
 
-### 3.2 Usar SonarQube en Specification Clarification
+**Entrega esperada:**
+- [ ] spec.md actualizado
+- [ ] RNF relacionados con calidad son medibles
+- [ ] Validación con SonarQube clara
 
-Comando sugerido en tu agente IA:
+---
 
-```
-/speckit.specify
+### 3.3 Plan con validación automática
 
-"Crear Photo Album App con:
-- Requisitos testables (SonarQube validará)
-- Test-first approach
-- Coverage mínimo 80%
-- Métricas: use /mcp sonarqube-check después"
-```
+**Tareas:**
+1. Abre tu `plan.md`
+2. Añade sección nueva: "Validación Automática de Calidad"
+3. Diseña cómo se validarán los requisitos:
+   - Cuándo se ejecuta SonarQube
+   - Qué gates de calidad se enforzan
+   - Cómo el agente IA recibirá feedback
+   - Qué hacer si falla validación
 
-### 3.3 Plan con Validación Automática
+4. Especifica integración con CI/CD (si aplica)
 
-En `plan.md`, integra validaciones:
+**Requisitos:**
+- plan.md existente
+- Entender CI/CD pipelines
 
-```markdown
-## Validación de Plan (SonarQube MCP)
+**Elementos a incluir:**
+- [ ] Estrategia de análisis
+- [ ] Quality gates
+- [ ] Feedback loop
+- [ ] Remediation process
 
-### Analisis Anterior (Baseline)
-- Coverage: N/A (proyecto nuevo)
-- Debt: 0
+**Entrega esperada:**
+- [ ] Nueva sección en plan.md
+- [ ] Validación automática diseñada
+- [ ] Quality gates especificados
+- [ ] Feedback mechanism documentado
 
-### Análisis Esperado (Después)
-- Coverage: ≥ 80%
-- Code Smells: < 5
-- Security: 0 hotspots críticos
+---
 
-### CI/CD Integration
-```yaml
-- Run: sonar-scanner
-- Check: SonarQube quality gate
-- Fail if: Coverage < 80% OR critical issues
-```
-```
+### 3.4 Tasks con validación automática
 
-### 3.4 Tasks con Validación Automática
+**Tareas:**
+1. Revisa tu `tasks.md`
+2. Identifica tasks relacionadas con calidad/testing
+3. Para cada una, añade:
+   - Cómo se validará con SonarQube
+   - Qué métrica debe mejorarse
+   - Cómo verificar que pasó
+4. Crea nueva task: "Ejecutar análisis SonarQube final"
 
-Añade task de validación:
+**Requisitos:**
+- tasks.md existente
+- Entender estructura de tasks
 
-```markdown
-### Task: SonarQube Quality Gate
-
-- **Archivos:** CI/CD configuration
-- **Comando:** `sonar-scanner`
-- **Criterios:**
-  - [ ] No critical issues
-  - [ ] Coverage ≥ 80%
-  - [ ] Security A rating
-  - [ ] Quality gate passed
-
-- **En caso de fallo:** Agente IA recibe reporte MCP
-```
+**Entrega esperada:**
+- [ ] Tasks de calidad marcadas
+- [ ] Criterios de SonarQube añadidos
+- [ ] Task final de análisis creada
+- [ ] Validación clara para cada task
 
 ---
 
 ## 🧪 Parte 4: Ejecutar Análisis SonarQube
 
-### 4.1 Analizar Código Existente
+### 4.1 Analizar código existente
 
-```bash
-# Ejecutar scanner
-sonar-scanner
+**Tareas:**
+1. Navega a directorio del proyecto
+2. Ejecuta sonar-scanner
+3. Espera a que se complete el análisis
+4. Verifica resultados en dashboard de SonarQube
 
-# Esperar a que complete (2-5 min)
-# Resultado en: http://localhost:9000/projects
-```
+**Requisitos:**
+- SonarQube corriendo
+- `sonar-project.properties` configurado
+- Token válido
+- Código para analizar
 
-### 4.2 Interpretar Resultados
+**Qué observar:**
+- [ ] Scanner inicia sin errores
+- [ ] Scanner completa (2-5 min típicamente)
+- [ ] Dashboard muestra resultados
+- [ ] Métricas son calculadas
 
-```
-Quality Gate Status: ✅ PASSED / ❌ FAILED
+**Entrega esperada:**
+- [ ] Análisis completado
+- [ ] Screenshot del dashboard
+- [ ] Reporte de resultados
 
-Métricas Principales:
-├── Lines of Code: 2,345
-├── Duplicated Lines: 2% ✓
-├── Coverage: 82% ✓
-├── Code Smells: 3 (Minor)
-├── Security Hotspots: 0 ✓
-└── Cognitive Complexity: 8 (Avg)
-```
+---
 
-### 4.3 Consultar via MCP en Agente IA
+### 4.2 Interpretar resultados
 
-Comando para tu agente (ejemplo Claude):
+**Tareas:**
+1. Abre SonarQube dashboard
+2. Documenta los resultados encontrados:
+   - Líneas de código total
+   - Porcentaje de duplicación
+   - Cobertura de tests (%)
+   - Code smells encontrados
+   - Hotspots de seguridad
+   - Complejidad cognitiva promedio
 
-```
-/mcp sonarqube-report
+3. Compara con objetivos en constitution.md
+4. Identifica brecha (si existe)
 
-Respuesta esperada:
-"El análisis SonarQube muestra:
-- Coverage excelente (82%)
-- 3 code smells menores en AlbumGrid.vue (lines 45-50)
-- Recomendación: refactorizar línea 50 para reducir complejidad
-- Security: Sin vulnerabilidades 🎉"
-```
+**Requisitos:**
+- Análisis completado (4.1)
+- Acceso a SonarQube dashboard
+
+**Elementos a documentar:**
+- [ ] Métricas principales
+- [ ] Issues encontrados
+- [ ] Comparación con objetivos
+- [ ] Brecha de calidad
+
+**Entrega esperada:**
+- [ ] Documento con resultados
+- [ ] Screenshots del dashboard
+- [ ] Análisis de brecha
+- [ ] Priorización de fixes
+
+---
+
+### 4.3 Consultar MCP en tu agente IA
+
+**Tareas:**
+1. En tu agente IA, realiza una consulta al MCP Server
+2. Pregunta: "¿Cuáles son los problemas principales de calidad?"
+3. Documenta la respuesta recibida
+4. Verifica que la información es correcta vs dashboard
+
+**Requisitos:**
+- MCP Server corriendo (Parte 2.3)
+- Agente IA configurado (Parte 2.4)
+- Análisis completado (Parte 4.1)
+
+**Entrega esperada:**
+- [ ] Consulta exitosa al MCP
+- [ ] Respuesta del MCP recibida
+- [ ] Información coincide con dashboard
+- [ ] Agente IA entiende contexto
 
 ---
 
@@ -375,157 +419,300 @@ Respuesta esperada:
 
 ### Ejercicio 5.1: Corregir Código Basado en SonarQube
 
-**Instrucciones:**
+**Enunciado:**
 
-1. **Ejecuta análisis:**
-   ```bash
+Tu equipo debe eliminar los code smells más graves encontrados por SonarQube.
+
+**Tareas:**
+
+1. **Identificar:** Abre SonarQube y ve a Issues. Filtra por "Code Smell" y ordena por severidad.
+
+2. **Seleccionar:** Elige el primer code smell de la lista.
+
+3. **Documentar:** Crea archivo `fixes/cs-fix-001.md` que contenga:
+   - Código original (antes)
+   - Explicación del problema
+   - Cómo piensas corregirlo
+   - Código corregido (después)
+
+4. **Aplicar:** Implementa la corrección en el código real
+
+5. **Validar:** Ejecuta SonarQube nuevamente
+   ```
    sonar-scanner
    ```
 
-2. **Identifica primer code smell:**
-   - Abre http://localhost:9000
-   - Proyecto → Issues
-   - Haz click en primer issue
+6. **Verificar:** El code smell debe desaparecer del dashboard
 
-3. **En tu agente IA (Claude, etc):**
-   ```
-   /mcp sonarqube-code-smell
-   
-   Pide al agente:
-   "Fix the first code smell found by SonarQube
-   according to constitutional principles"
-   ```
+7. **Repetir:** Haz lo mismo con los próximos 2 code smells
 
-4. **El agente:**
-   - Consulta SonarQube MCP
-   - Lee constitution.md
-   - Genera fix
-   - Muestra cambios
+**Criterios de éxito:**
+- [ ] Mínimo 3 code smells corregidos
+- [ ] SonarQube lo reporta como "Resolved"
+- [ ] Documentación de cambios completa
+- [ ] Código sigue constitución del proyecto
 
-5. **Vuelve a ejecutar:**
-   ```bash
-   sonar-scanner
-   ```
-
-6. **Verifica:**
-   - Issue debe desaparecer
-   - Coverage se mantiene o mejora
+**Entrega esperada:**
+- [ ] 3 archivos `fixes/cs-fix-00X.md`
+- [ ] Cambios aplicados en código
+- [ ] Screenshot post-fix del dashboard
+- [ ] Reporte de issues resueltas
 
 ---
 
-### Ejercicio 5.2: Test Coverage Gap
+### Ejercicio 5.2: Aumentar Test Coverage
 
-**Objetivo:** Aumentar cobertura de 82% a 90%
+**Enunciado:**
 
-1. **Ejecutar análisis:**
-   ```bash
+Tu aplicación tiene 82% de cobertura pero necesita llegar a 90% según constitution.md.
+
+**Tareas:**
+
+1. **Medir:** Ejecuta análisis con cobertura
+   ```
    npm run test -- --coverage
    sonar-scanner
    ```
 
-2. **Ver gaps:**
-   ```bash
-   open http://localhost:9000/dashboard?id=photo-album-app
-   Haz click en "Coverage"
-   ```
+2. **Identificar:** En SonarQube, ve a Coverage y ve qué archivos tiene baja cobertura
 
-3. **Pedir al agente IA:**
-   ```
-   /mcp sonarqube-coverage-gap
-   
-   "Write tests for uncovered lines in:
-   - AlbumStore.ts (lines 45-67)
-   - PhotoService.ts (lines 102-115)
-   
-   Target: 90% coverage"
-   ```
+3. **Seleccionar:** Elige 2-3 archivos con < 75% cobertura
 
-4. **Agente genera tests**
+4. **Analizar:** Para cada archivo:
+   - Identifica qué líneas no están cubiertas
+   - Entiende por qué (lógica no probada, edge cases, etc)
+   - Documenta en `test-gaps/gap-001.md`
 
-5. **Verifica:**
-   ```bash
+5. **Escribir tests:** Crea nuevos tests para cubrir gaps
+   - Tests unitarios
+   - Tests de integración
+   - Edge cases
+
+6. **Validar:**
+   ```
    npm run test
    sonar-scanner
    ```
+
+7. **Verificar:** Coverage debe aumentar
+
+**Criterios de éxito:**
+- [ ] Coverage total ≥ 90%
+- [ ] Archivos seleccionados ≥ 85% cada uno
+- [ ] Tests nuevos son significativos (no solo count lines)
+- [ ] Tests pasan todos
+
+**Entrega esperada:**
+- [ ] Archivos `test-gaps/gap-00X.md`
+- [ ] Nuevos tests implementados
+- [ ] Screenshot del dashboard post-fix
+- [ ] Coverage report comparativo (antes vs después)
 
 ---
 
 ### Ejercicio 5.3: Security Hotspot Analysis
 
-**Objetivo:** Asegurar código contra vulnerabilidades
+**Enunciado:**
 
-1. **Ejecutar scan:**
-   ```bash
-   sonar-scanner
-   ```
+SonarQube ha identificado potenciales vulnerabilidades de seguridad. Tu tarea es analizarlas y determinar el riesgo.
 
-2. **Revisar Security Hotspots:**
-   - Dashboard → Security
-   - Ver cualquier hotspot encontrado
+**Tareas:**
 
-3. **Consultar MCP:**
-   ```
-   /mcp sonarqube-security
-   
-   "Review all security hotspots and explain
-   the risk using OWASP Top 10 framework"
-   ```
+1. **Identificar:** En SonarQube, ve a Security → Security Hotspots
 
-4. **Agente analiza y recomienda fixes**
+2. **Documentar:** Para cada hotspot, crea archivo `security/hotspot-001.md`:
+   - Descripción del hotspot
+   - Tipo de vulnerabilidad (OWASP Top 10)
+   - Severidad (Critical, High, Medium, Low)
+   - Ubicación exacta (archivo + línea)
+   - Código problemático
+
+3. **Analizar:** Para cada hotspot:
+   - ¿Es realmente un riesgo?
+   - ¿Es falso positivo?
+   - ¿Necesita fix?
+   - ¿Cuál es el impacto?
+
+4. **Planificar:** Decide para cada uno:
+   - [ ] Necesita fix inmediato (Critical)
+   - [ ] Necesita fix en próxima iteración (High)
+   - [ ] Monitorear pero OK por ahora (Medium)
+   - [ ] No es riesgo real (False positive)
+
+5. **Documentar:** Crea `security/analysis-report.md` con:
+   - Resumen ejecutivo
+   - Lista de hotspots con recomendaciones
+   - Plan de remediation
+   - Priorización
+
+6. **Comunicar:** Presenta hallazgos como si fueras a un security review
+
+**Criterios de éxito:**
+- [ ] Todos los hotspots analizados
+- [ ] Riesgo clasificado correctamente
+- [ ] Plan de remediation claro
+- [ ] Decisiones justificadas
+
+**Entrega esperada:**
+- [ ] `security/hotspot-001.md`, `hotspot-002.md`, etc (uno por cada)
+- [ ] `security/analysis-report.md` (consolidado)
+- [ ] Recomendaciones claras
+- [ ] Plan de acción
 
 ---
 
 ## 📊 Parte 6: Métricas a Seguir
 
-### Dashboard Recomendado
+### 6.1 Crear Dashboard Personalizado
 
-Crea un dashboard personal en SonarQube:
+**Tareas:**
 
-```
-┌─────────────────────────────────────┐
-│  Photo Album App - Quality Overview │
-├─────────────────────────────────────┤
-│ Coverage:          ████████░░ 82%   │
-│ Duplications:      ██░░░░░░░░ 2%    │
-│ Code Smells:       ███░░░░░░░ 3     │
-│ Security Rating:   A (No issues)    │
-│ Reliability:       A (No bugs)      │
-│ Maintainability:   A (Good)         │
-└─────────────────────────────────────┘
-```
+1. En SonarQube, crea un dashboard personalizado para Photo Album App
+2. Incluye widgets para:
+   - Coverage trend (línea)
+   - Code smells (número)
+   - Duplicated lines (%)
+   - Security rating (badge)
+   - Reliability (badge)
+   - Maintainability (badge)
 
-### Métricas por Archivo
+3. Configura alertas para:
+   - Coverage cae por debajo de 80%
+   - Nuevos code smells introducidos
+   - Nuevos security hotspots
 
-Monitorear cambios en archivos clave:
+4. Comparte screenshot del dashboard
 
-```
-AlbumStore.ts
-- Coverage: 90%
-- Code Smells: 1 (Minor)
-- Cognitive Complexity: 7
-- Trend: ↑ (improving)
+**Requisitos:**
+- Acceso a SonarQube
+- Análisis completado
 
-PhotoService.ts
-- Coverage: 75%
-- Code Smells: 2 (Minor)
-- Cognitive Complexity: 9
-- Trend: ↓ (needs attention)
-```
+**Entrega esperada:**
+- [ ] Dashboard personalizado creado
+- [ ] Widgets configurados
+- [ ] Alertas activas
+- [ ] Screenshot compartido
+
+---
+
+### 6.2 Definir métricas por componente
+
+**Tareas:**
+
+1. Documenta en `metrics/component-metrics.md`:
+   - Para cada componente/módulo principal
+   - Qué métricas le aplican
+   - Qué valores son aceptables
+   - Qué valores son alertas
+
+2. Ejemplo:
+   ```
+   AlbumStore.ts:
+   - Coverage: ≥ 90% (crítico)
+   - Code Smells: ≤ 2
+   - Complexity: ≤ 8
+   - Duplicates: ≤ 2%
+   ```
+
+3. Crea tabla de componentes con métricas actuales
+
+**Requisitos:**
+- Análisis completado
+- Acceso a SonarQube
+
+**Entrega esperada:**
+- [ ] `metrics/component-metrics.md`
+- [ ] Mínimo 10 componentes documentados
+- [ ] Tabla de valores actuales
+- [ ] Identificados outliers (fuera de rango)
+
+---
+
+### 6.3 Tendencias y evolución
+
+**Tareas:**
+
+1. Cada semana (o después de cambios importantes), ejecuta análisis
+   ```
+   sonar-scanner
+   ```
+
+2. Documenta en `metrics/evolution.md`:
+   - Fecha
+   - Coverage (%)
+   - Code Smells (count)
+   - Security Issues (count)
+   - Observaciones
+
+3. Crea tabla o gráfico ASCII mostrando evolución
+
+4. Identifica trends:
+   - ¿Mejorando?
+   - ¿Empeorando?
+   - ¿Estable?
+
+**Requisitos:**
+- Múltiples análisis a través del tiempo
+
+**Entrega esperada:**
+- [ ] `metrics/evolution.md`
+- [ ] Mínimo 3 mediciones
+- [ ] Gráfico ASCII o tabla
+- [ ] Análisis de tendencia
 
 ---
 
 ## ✅ Checklist Final del Ejercicio
 
-- [ ] SonarQube instalado y ejecutando en :9000
-- [ ] Token generado y guardado
-- [ ] MCP server escrito y funcionando
-- [ ] Integración en `.claude.json` o equivalente
-- [ ] Constitution.md incluye métricas de calidad
-- [ ] Análisis inicial ejecutado
-- [ ] 5.1: Code smell corregido
-- [ ] 5.2: Coverage > 90%
-- [ ] 5.3: Security hotspots revisados
-- [ ] Dashboard personalizado creado
+- [ ] **Parte 1:** SonarQube instalado y token creado
+- [ ] **Parte 2:** MCP Server implementado y configurado
+- [ ] **Parte 3:** Constitution, Spec, Plan, Tasks actualizados
+- [ ] **Parte 4:** Primer análisis ejecutado e interpretado
+- [ ] **Parte 5.1:** 3 Code Smells corregidos
+- [ ] **Parte 5.2:** Coverage aumentado a 90%
+- [ ] **Parte 5.3:** Security hotspots analizados
+- [ ] **Parte 6.1:** Dashboard personalizado creado
+- [ ] **Parte 6.2:** Métricas por componente documentadas
+- [ ] **Parte 6.3:** Evolución de métricas rastreada
+
+---
+
+## 📚 Recursos Necesarios
+
+### Documentación Externa
+- SonarQube Official Docs
+- SonarQube API Reference
+- Model Context Protocol Specification
+- OWASP Top 10
+
+### Herramientas Requeridas
+- SonarQube (local o cloud)
+- sonar-scanner CLI
+- Tu lenguaje preferido (JS, Python, Go, etc) para MCP Server
+- Tu agente IA (Claude, Copilot, etc)
+
+### Archivos a Crear
+```
+proyecto/
+├── sonar-project.properties
+├── mcp-server/
+│   └── server.js (o .py, .go, etc)
+├── fixes/
+│   ├── cs-fix-001.md
+│   ├── cs-fix-002.md
+│   └── cs-fix-003.md
+├── test-gaps/
+│   ├── gap-001.md
+│   ├── gap-002.md
+│   └── nuevos-tests.ts
+├── security/
+│   ├── hotspot-001.md
+│   ├── hotspot-002.md
+│   └── analysis-report.md
+└── metrics/
+    ├── component-metrics.md
+    └── evolution.md
+```
 
 ---
 
@@ -534,26 +721,8 @@ PhotoService.ts
 1. **SonarQube MCP** enriquece el contexto del agente IA
 2. **Métricas objetivas** reemplazan intuición sobre calidad
 3. **Spec-Driven + SonarQube** = desarrollo confiable
-4. **Feedback en vivo** acelera detección de issues
+4. **Feedback automático** acelera detección y fix de issues
 5. **Constitution validada** asegura consistencia
-
----
-
-## 📚 Recursos Adicionales
-
-### Documentación
-- [SonarQube Official Docs](https://docs.sonarsource.com/sonarqube/)
-- [Model Context Protocol](https://modelcontextprotocol.io/)
-- [SonarQube API](https://sonarqube.domain.com/web_api)
-
-### Herramientas
-- SonarQube Docker: `docker pull sonarqube:latest`
-- Sonar Scanner: `npm install -g sonar-scanner`
-- Quality Gates: Configurables en SonarQube UI
-
-### Ejemplos
-- [Spec Kit + Quality Gates](https://github.com/github/spec-kit/examples/quality)
-- [MCP Toolkit](https://github.com/modelcontextprotocol/toolkit)
 
 ---
 
@@ -569,7 +738,7 @@ PhotoService.ts
 
 **Ejercicio Versión:** 1.0  
 **Dificultad:** Intermedio  
-**Tiempo Estimado:** 2-3 horas  
+**Tiempo Estimado:** 6-8 horas (desglosado)  
 **Requisitos Previos:** Haber completado ejemplo photo-album-app
 
 **¡Éxito con tu integración de SonarQube MCP! 🎉**
