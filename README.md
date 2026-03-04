@@ -26,94 +26,33 @@
 
 Este repositorio contiene una guía completa sobre **Spec-Driven Development** con GitHub Spec Kit, incluyendo una aplicación de ejemplo y ejercicios prácticos.
 
-## 📁 Estructura del Repositorio
-
-```
-spec-kit-repo/
-├── README.md                          # Este archivo
-├── SpecKit.md                         # Guía completa de Spec Kit
-├── examples/
-│   └── photo-album-app/
-│       ├── README.md                  # Documentación de la app
-│       ├── spec.md                    # Especificación funcional
-│       ├── plan.md                    # Plan técnico con Contex7
-│       ├── constitution.md            # Principios del proyecto
-│       ├── tasks.md                   # Lista de tareas
-│       ├── src/                       # Código fuente (placeholder)
-│       ├── tests/                     # Tests (placeholder)
-│       └── docker-compose.yml         # Infraestructura
-├── exercises/
-│   └── sonarqube-mcp-exercise.md      # Ejercicio con SonarQube MCP
-└── .gitignore                         # Git ignore
-```
-
 ## 🎯 Contenido
 
-### 1. **SpecKit.md**
-Guía completa sobre Spec-Driven Development con:
+Este repositorio agrupa varios documentos y ejemplos que ayudan a entender y practicar el flujo de trabajo spec‑driven:
+
+### 1. **spec_driven_development_overview.md**
+
+Un ensayo ilustrativo que contextualiza SDD históricamente, describe los distintos niveles de rigor (spec‑first, spec‑anchored, spec‑as‑source) y explica por qué la IA ha vuelto crucial el enfoque de especificación.
+
+### 2. **SpecKit.md**
+
+Guía completa sobre GitHub Spec Kit con:
+
 - Conceptos fundamentales
 - Flujo de trabajo paso a paso
 - Comandos disponibles
 - Mejores prácticas
 - Troubleshooting
 
-### 2. **Ejemplo: Photo Album App**
-Aplicación de gestión de álbumes de fotos con:
-- **Constitution**: Principios del proyecto
-- **Specification**: Requisitos funcionales (sin tech)
-- **Plan**: Implementación técnica con **Contex7**
-- **Tasks**: Desglose de tareas
-- **Estructura de código**: Estructura básica del proyecto
+### 3. **Taskify.md**
 
-**Por qué Contex7 en la fase de plan:**
-- Gestiona múltiples contextos técnicos
-- Mapea dependencias complejas
-- Documenta decisiones arquitectónicas
-- Facilita colaboración en equipos distribuidos
-- Permite rastrear cambios de contexto
+Ejemplo práctico que sigue el flujo completo (constitución, especificación, plan, tareas, implementación) para una aplicación de gestión de tareas denominada _Taskify_. Ideal para ver el proceso en acción.
 
-### 3. **Ejercicio: SonarQube MCP Integration**
-Ejercicio práctico que integra:
-- SonarQube como Model Context Protocol (MCP)
-- Análisis de código automático
-- Validación de calidad
-- Generación de reportes
-- Integración con Spec Kit
+### 4. **exercises/**
 
-## 🚀 Comenzar
+Directorio con ejercicios orientados a reforzar conceptos. Actualmente incluye:
 
-### Opción 1: Explorar la Guía
-```bash
-cat SpecKit.md
-```
-
-### Opción 2: Estudiar el Ejemplo
-```bash
-cd examples/photo-album-app
-cat README.md      # Overview
-cat spec.md        # Qué construir
-cat plan.md        # Cómo construirlo con Contex7
-cat tasks.md       # Tareas específicas
-```
-
-### Opción 3: Hacer el Ejercicio
-```bash
-cd exercises
-cat sonarqube-mcp-exercise.md
-```
-
-## 📊 Flujo Recomendado
-
-```
-1. Lee SpecKit.md
-   ↓
-2. Estudia photo-album-app/
-   - spec.md → plan.md → tasks.md
-   ↓
-3. Completa sonarqube-mcp-exercise.md
-   ↓
-4. Crea tu propio proyecto con Spec Kit
-```
+- `quality-exercise-optional.md` – ejercicio para integrar SonarQube vía MCP (_Opcional_).
 
 ## 🔗 Enlaces Útiles
 
@@ -133,6 +72,7 @@ cat sonarqube-mcp-exercise.md
 ## 🤝 Contribuciones
 
 Si encuentras mejoras o quieres añadir ejemplos:
+
 1. Fork este repositorio
 2. Crea una rama: `git checkout -b feature/mi-mejora`
 3. Commit: `git commit -m "Añade mejora"`
@@ -144,5 +84,3 @@ Si encuentras mejoras o quieres añadir ejemplos:
 MIT License - Libre para usar, modificar y distribuir
 
 ---
-
-**Creado con ❤️ para la comunidad de Spec-Driven Development**
