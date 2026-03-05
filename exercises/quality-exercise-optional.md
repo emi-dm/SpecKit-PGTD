@@ -26,7 +26,7 @@
 
 ## Objetivo
 
-Integrar **SonarQube como Model Context Protocol (MCP)** usando **docker-sonarqube-setup** en el flujo de desarrollo de Photo Album App para garantizar mantenibilidad automática a través del agente IA.
+Integrar **SonarQube como Model Context Protocol (MCP)** usando **docker-sonarqube-setup** en el flujo de desarrollo de Taskify para garantizar mantenibilidad automática a través del agente IA.
 
 ---
 
@@ -50,7 +50,8 @@ El agente IA **recibe contexto en vivo** sobre calidad, en lugar de ejecutar com
 
 ### ¿Por qué es importante?
 
-La **Constitution** de Photo Album App especifica:
+La **Constitution** de Taskify especifica:
+
 - Código legible y mantenible
 - 80% cobertura de tests mínimo
 - Sin vulnerabilidades de seguridad
@@ -77,6 +78,7 @@ cd docker-sonarqube-setup
 ```
 
 **Resultado esperado:**
+
 - SonarQube corriendo en http://localhost:9000
 - PostgreSQL en background
 - Acceso: admin / admin
@@ -95,6 +97,7 @@ cd docker-sonarqube-setup
    ```
 
 **Entrega:**
+
 - [ ] Token generado
 - [ ] Token guardado en `.env`
 
@@ -103,6 +106,7 @@ cd docker-sonarqube-setup
 **Para Claude Code:**
 
 Edita `.claude.json` en tu proyecto:
+
 ```json
 {
   "mcp": {
@@ -110,11 +114,17 @@ Edita `.claude.json` en tu proyecto:
       "type": "stdio",
       "command": "docker",
       "args": [
-        "run", "-i", "--rm", "--init",
+        "run",
+        "-i",
+        "--rm",
+        "--init",
         "--pull=always",
-        "-e", "SONARQUBE_TOKEN",
-        "-e", "SONARQUBE_URL",
-        "--network", "sonarqube-net",
+        "-e",
+        "SONARQUBE_TOKEN",
+        "-e",
+        "SONARQUBE_URL",
+        "--network",
+        "sonarqube-net",
         "mcp/sonarqube"
       ],
       "env": {
@@ -128,12 +138,12 @@ Edita `.claude.json` en tu proyecto:
 
 **Para otros agentes:** Consulta su documentación de MCP integration.
 
-### 4. Abrir Photo Album App con Agente IA
+### 4. Abrir Taskify con Agente IA
 
-Abre tu agente IA (Claude Code, etc) en el directorio de Photo Album App:
+Abre tu agente IA (Claude Code, etc) en el directorio de Taskify:
 
 ```bash
-cd ../photo-album-app
+cd ../taskify
 # Abrir con tu agente IA
 code .  # para VS Code + Claude Code
 ```
@@ -166,15 +176,19 @@ Crea `SONARQUBE_ANALYSIS.md`:
 ## Consultas Realizadas
 
 ### 1. Estado General
+
 [Respuesta del MCP]
 
 ### 2. Coverage
+
 [Respuesta del MCP]
 
 ### 3. Vulnerabilidades
+
 [Respuesta del MCP]
 
 ### 4. Code Smells
+
 [Respuesta del MCP]
 
 ## Planes de Mejora
@@ -196,6 +210,7 @@ Usa @sonarqube para verificar mejoras"
 ```
 
 El agente IA:
+
 - Consulta SonarQube vía MCP
 - Ve exactamente qué está mal
 - Genera fixes específicos
@@ -204,26 +219,31 @@ El agente IA:
 ### 8. Integrar en Spec-Driven
 
 **Actualiza constitution.md:**
+
 ```markdown
 ## Validación Automática (SonarQube MCP)
 
 Toda la validación de calidad ocurre automáticamente a través del MCP:
+
 - Coverage: ≥ 80% (validado por MCP)
 - Code Smells: ≤ 3 (detectados por MCP)
 - Vulnerabilidades: 0 (reportadas por MCP)
 ```
 
 **Actualiza plan.md:**
+
 ```markdown
 ## Garantía de Calidad con MCP
 
 El agente IA tiene acceso a SonarQube vía MCP:
+
 - Consulta calidad en vivo
 - Recibe recomendaciones específicas
 - Valida fixes automáticamente
 ```
 
 **Actualiza tasks.md:**
+
 ```markdown
 ### Task: Validación SonarQube MCP
 
@@ -261,6 +281,7 @@ sonarqube-mcp/
 ```
 
 Además, actualiza:
+
 - `constitution.md` - Con validación MCP
 - `plan.md` - Con estrategia MCP
 - `tasks.md` - Con criterios MCP
@@ -295,13 +316,13 @@ Además, actualiza:
 
 ## Ventajas vs sonar-scanner
 
-| Aspecto | sonar-scanner | MCP |
-|---------|---------------|-----|
-| **Automatización** | Manual | Automática |
-| **Integración IA** | No | Sí |
-| **Feedback tiempo-real** | No | Sí |
-| **Desarrollo iterativo** | Lento | Rápido |
-| **Contexto en IA** | No | Completo |
+| Aspecto                  | sonar-scanner | MCP        |
+| ------------------------ | ------------- | ---------- |
+| **Automatización**       | Manual        | Automática |
+| **Integración IA**       | No            | Sí         |
+| **Feedback tiempo-real** | No            | Sí         |
+| **Desarrollo iterativo** | Lento         | Rápido     |
+| **Contexto en IA**       | No            | Completo   |
 
 ---
 
@@ -314,7 +335,7 @@ Al usar SonarQube MCP:
 ✅ **Valida** automáticamente que se resuelven  
 ✅ Mantiene código **mantenible** durante desarrollo  
 ✅ No requiere comandos manuales  
-✅ **Feedback en vivo** mientras desarrollas  
+✅ **Feedback en vivo** mientras desarrollas
 
 ---
 
